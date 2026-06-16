@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <?!= include('Styles'); ?>
+  </head>
+  <body>
+    <main class="page">
+      <section class="card">
+        <h1>Automated Proposal Generator</h1>
+        <p class="subtitle">Capture client details, generate a proposal PDF, and email it in one flow.</p>
+
+        <form id="proposalForm" class="form-grid">
+          <label>
+            Client Name *
+            <input type="text" name="clientName" required>
+          </label>
+
+          <label>
+            Client Company *
+            <input type="text" name="clientCompany" required>
+          </label>
+
+          <label class="full">
+            Recipient Email(s) *
+            <input type="text" name="clientEmails" placeholder="alice@client.com, bob@client.com" required>
+          </label>
+
+          <label class="full">
+            Project Title *
+            <input type="text" name="projectTitle" required>
+          </label>
+
+          <label class="full">
+            Project Scope *
+            <textarea name="projectScope" rows="4" required></textarea>
+          </label>
+
+          <label class="full">
+            Deliverables
+            <textarea name="deliverables" rows="3" placeholder="List key deliverables"></textarea>
+          </label>
+
+          <label>
+            Timeline
+            <input type="text" name="timeline" placeholder="6 weeks">
+          </label>
+
+          <label>
+            Budget *
+            <input type="text" name="budget" placeholder="5000" required>
+          </label>
+
+          <label>
+            Currency
+            <select name="currency">
+              <option value="USD">USD</option>
+              <option value="IDR">IDR</option>
+              <option value="EUR">EUR</option>
+              <option value="GBP">GBP</option>
+            </select>
+          </label>
+
+          <label>
+            Sales Representative *
+            <input type="text" name="salesRep" required>
+          </label>
+
+          <label class="full">
+            Email Subject
+            <input type="text" name="emailSubject" placeholder="Optional custom subject">
+          </label>
+
+          <label class="full">
+            Email Message
+            <textarea name="emailMessage" rows="5" placeholder="Optional custom email body"></textarea>
+          </label>
+
+          <button type="submit" id="submitButton">Generate + Send Proposal</button>
+        </form>
+
+        <div id="status" class="status" aria-live="polite"></div>
+      </section>
+    </main>
+
+    <script>
+      const form = document.getElementById('proposalForm');
+      const statusEl = document.getElementById('status');
+      const submitButton = document.getElementById('submitButton');
+
+      form.addEventListener('submit', function(event) {
+        event.preventDefault();
+
+        const data = Object.fromEntries(new FormData(form).entries());
+        submitButton.disabled = true;
+        setStatus('Generating proposal and sending email...', 'pending');
+
+        google.script.run
+          .withSuccessHandler(function(result) {
+            setStatus(
+              'Success. Proposal ' + result.proposalNumber + ' sent. ' +
+              'Doc: ' + result.docUrl + ' | PDF: ' + result.pdfUrl,
+              'success'
+            );
+            form.reset();
+            submitButton.disabled = false;
+          })
+          .withFailureHandler(function(error) {
+            setStatus('Failed: ' + error.message, 'error');
+            submitButton.disabled = false;
+          })
+          .submitProposal(data);
+      });
+
+      function setStatus(text, type) {
+        statusEl.textContent = text;
+        statusEl.className = 'status ' + type;
+      }
+    </script>
+  </body>
+</html>
